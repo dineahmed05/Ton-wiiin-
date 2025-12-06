@@ -202,6 +202,103 @@
     </script>
 </body>
 </html>
+                // رابط الإحالة
+                document.getElementById('ref-link').value = `https://t.me/${BOT_USERNAME}?startapp=${user.id}`;
+                
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateUI(data) {
+            currentBalance = data.balance;
+            document.getElementById('balance').innerText = currentBalance.toLocaleString();
+            if(data.wallet) document.getElementById('wallet-input').value = data.wallet;
+        }
+
+        // عرض الإعلان
+        function showAd() {
+            const status = document.getElementById('status');
+            status.innerText = "جاري التحميل...";
+            
+            if(!window.Adsgram) {
+                status.innerText = "خطأ: المكتبة لم تحمل";
+                return;
+            }
+
+            const AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+            
+            AdController.show().then((result) => {
+                // نجاح
+                fetch('/api/watch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: user.id})
+                }).then(r => r.json()).then(d => {
+                    updateUI({balance: d.new_balance});
+                    status.innerText = "✅ مبروك! ربحت 100 نقطة";
+                    status.style.color = "green";
+                });
+            }).catch((e) => {
+                // فشل
+                status.innerText = "❌ لم تكمل الإعلان";
+                status.style.color = "red";
+            });
+        }
+
+        // المكافأة اليومية
+        function claimDaily() {
+            fetch('/api/daily_bonus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id})
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    updateUI({balance: d.new_balance});
+                    alert("تم استلام المكافأة! 🎁");
+                } else {
+                    alert("عد غداً!");
+                }
+            });
+        }
+
+        // السحب
+        function withdraw() {
+            const wallet = document.getElementById('wallet-input').value;
+            if(!wallet) return alert("أدخل المحفظة");
+            
+            fetch('/api/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id, wallet: wallet})
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    alert("تم إرسال الطلب بنجاح!");
+                    location.reload();
+                } else {
+                    alert("رصيد غير كاف (50,000)");
+                }
+            });
+        }
+
+        function copyRef() {
+            const el = document.getElementById('ref-link');
+            el.select();
+            navigator.clipboard.writeText(el.value);
+            alert("تم النسخ!");
+        }
+
+        function nav(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        init();
+    </script>
+</body>
+</html>
         // --- إعدادات البوت ---
         const BLOCK_ID = "18732";           // ✅ البلوك آيدي الخاص بك
         const BOT_USERNAME = "Watchandwiiinbot"; // ✅ اسم البوت
