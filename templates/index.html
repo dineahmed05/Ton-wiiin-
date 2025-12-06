@@ -3,41 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ton Wiiin</title>
+    <title>Ton Wiiin Pro</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     
     <style>
         :root { --primary: #0098EA; --bg: #101010; --card: #1e1e1e; --text: #fff; --green: #2ecc71; --red: #e74c3c; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,152,234,0.1), transparent); }
         .big-balance { text-align: center; margin: 20px 0; }
-        .balance-amount { font-size: 44px; font-weight: 800; color: white; text-shadow: 0 0 15px rgba(0,152,234,0.5); }
+        .balance-amount { font-size: 46px; font-weight: 800; color: white; text-shadow: 0 0 20px rgba(0,152,234,0.4); }
         
-        .card { background: var(--card); border-radius: 16px; padding: 20px; margin: 15px; border: 1px solid #333; text-align: center; }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; margin: 15px; border: 1px solid #333; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         
-        .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; color: white; transition: 0.2s; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; color: white; transition: 0.2s; }
         .btn-primary { background: var(--primary); }
         .btn-success { background: var(--green); }
         .btn:active { transform: scale(0.96); }
         
-        input { width: 90%; padding: 14px; background: #252525; border: 1px solid #444; color: white; border-radius: 10px; text-align: center; font-size: 16px; margin-bottom: 10px; outline: none; }
+        input { width: 88%; padding: 14px; background: #252525; border: 1px solid #444; color: white; border-radius: 10px; text-align: center; font-size: 16px; margin-bottom: 10px; outline: none; }
         input:focus { border-color: var(--primary); }
         
         .nav { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 100; }
         .nav-item { opacity: 0.5; font-size: 11px; text-align: center; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--primary); }
         
-        .page { display: none; }
+        .page { display: none; animation: fadeIn 0.3s; }
         .page.active { display: block; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
         
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
         .stat-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-size: 11px; }
         .stat-val { font-size: 15px; font-weight: bold; color: var(--primary); display: block; }
         
-        .convert-info { font-size: 13px; color: #aaa; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
+        .convert-info { font-size: 14px; color: #ddd; margin-bottom: 15px; background: rgba(46,204,113,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(46,204,113,0.2); }
         #admin-btn { background: var(--red); width: auto; margin: 0 auto 10px; display: none; padding: 8px 15px; font-size: 12px; }
     </style>
 </head>
@@ -48,7 +49,7 @@
         <button onclick="toggleLang()" style="background:#333; color:white; border:none; padding:5px 10px; border-radius:6px;">🌐 <span id="lang-txt">AR</span></button>
     </div>
     
-    <button id="admin-btn" class="btn btn-admin" onclick="location.href='/admin_panel_secret_key_99'">🔒 Admin</button>
+    <button id="admin-btn" class="btn btn-admin" onclick="location.href='/admin_panel_secret_key_99'">🔒 لوحة التحكم</button>
 
     <div id="p-home" class="page active">
         <div class="big-balance">
@@ -57,7 +58,7 @@
         </div>
 
         <div class="card">
-            <h3>إحصائياتي</h3>
+            <h3 data-key="my_stats">إحصائياتي</h3>
             <div class="stats-grid">
                 <div class="stat-box"><span class="stat-val" id="stat-ads">0</span>إعلانات</div>
                 <div class="stat-box"><span class="stat-val" id="stat-refs">0</span>دعوات</div>
@@ -67,7 +68,7 @@
 
         <div class="card">
             <h3 data-key="earn">زيادة الرصيد</h3>
-            <p style="color:#aaa; font-size:13px;">شاهد إعلانات قصيرة (+100 نقطة)</p>
+            <p style="color:#aaa; font-size:13px; margin-bottom: 10px;">شاهد إعلان واحد = <b>+250 نقطة</b> 🚀</p>
             <button class="btn btn-primary" onclick="showAd()">📺 <span data-key="watch">شاهد إعلان</span></button>
             <p id="ad-status" style="margin-top:10px; font-size:12px; min-height:20px;"></p>
         </div>
@@ -82,20 +83,20 @@
                 💵 <span id="calc-usd">0.00</span> $ &nbsp;|&nbsp; 💎 <span id="calc-ton">0.00</span> TON
             </div>
 
-            <input type="number" id="withdraw-amount" placeholder="أدخل المبلغ (مثال: 50000)" oninput="calculateValue()">
+            <p style="font-size:11px; color:#888;">الحد الأدنى: 100,000 نقطة (0.25$)</p>
             
+            <input type="number" id="withdraw-amount" placeholder="أدخل المبلغ (نقاط)" oninput="calculateValue()">
             <input type="text" id="wallet-input" placeholder="عنوان محفظة TON">
             
             <button class="btn btn-success" onclick="withdraw()">💸 <span data-key="wd_confirm">تأكيد السحب</span></button>
-            <p style="font-size:11px; color:#666; margin-top:10px;">الحد الأدنى: 50,000 نقطة</p>
         </div>
     </div>
 
     <div id="p-friends" class="page">
         <div class="card">
             <h3 data-key="invite">برنامج الإحالة</h3>
-            <p style="font-size:13px; color:#ccc;">اربح <b>500 نقطة</b> عن كل صديق.</p>
-            <p style="font-size:11px; color:#e74c3c;">⚠️ الشرط: يجب أن يشاهد الصديق 20 إعلان.</p>
+            <p style="font-size:13px; color:#ccc;">اربح <b>1000 نقطة</b> عن كل صديق!</p>
+            <p style="font-size:11px; color:#e74c3c;">⚠️ الشرط: يشاهد الصديق 20 إعلان.</p>
             <input type="text" id="ref-link" readonly value="...">
             <button class="btn btn-primary" onclick="copyRef()">📋 نسخ الرابط</button>
             <button class="btn" style="background:#0088cc; margin-top:5px;" onclick="shareTelegram()">✈️ مشاركة</button>
@@ -113,8 +114,8 @@
         const BOT_USERNAME = "Watchandwiiinbot"; 
         const ADMIN_ID = "1207530445";      
         
-        // أسعار الصرف
-        const RATE_USD_100K = 0.5; // نصف دولار لكل 100 ألف
+        // الاقتصاد الجديد: 100,000 نقطة = 0.25$
+        const DOLLAR_VAL = 0.25; 
         const TON_PRICE = 6.5;
 
         const tg = window.Telegram.WebApp;
@@ -125,8 +126,8 @@
         let userBalance = 0;
 
         const langData = {
-            ar: { earn: "زيادة الرصيد", watch: "شاهد إعلان", withdraw: "سحب الأرباح", wd_confirm: "تأكيد السحب", invite: "دعوة الأصدقاء", nav_home: "الرئيسية", nav_wd: "المحفظة", nav_friends: "أصدقاء" },
-            en: { earn: "Earn Points", watch: "Watch Ad", withdraw: "Withdraw Funds", wd_confirm: "Confirm Withdraw", invite: "Invite Friends", nav_home: "Home", nav_wd: "Wallet", nav_friends: "Friends" }
+            ar: { my_stats: "إحصائياتي", earn: "زيادة الرصيد", watch: "شاهد إعلان", withdraw: "سحب الأرباح", wd_confirm: "تأكيد السحب", invite: "دعوة الأصدقاء", nav_home: "الرئيسية", nav_wd: "المحفظة", nav_friends: "أصدقاء" },
+            en: { my_stats: "My Stats", earn: "Earn Points", watch: "Watch Ad", withdraw: "Withdraw", wd_confirm: "Confirm", invite: "Referrals", nav_home: "Home", nav_wd: "Wallet", nav_friends: "Friends" }
         };
 
         async function init() {
@@ -157,23 +158,22 @@
             document.getElementById('balance').innerText = userBalance.toLocaleString();
         }
 
-        // --- حساب القيمة الحية (Live Calculation) ---
+        // --- حساب القيمة الحية ---
         function calculateValue() {
             const amount = document.getElementById('withdraw-amount').value;
-            const usd = (amount / 100000) * RATE_USD_100K;
+            const usd = (amount / 100000) * DOLLAR_VAL;
             const ton = usd / TON_PRICE;
             document.getElementById('calc-usd').innerText = usd.toFixed(2);
             document.getElementById('calc-ton').innerText = ton.toFixed(4);
         }
 
-        // --- عرض الإعلان (تصحيح شامل) ---
+        // --- عرض الإعلان (المصححة) ---
         function showAd() {
             const status = document.getElementById('ad-status');
             status.innerText = (currentLang==='ar') ? "جاري التحميل..." : "Loading...";
             
-            // تحقق من وجود المكتبة (إذا ظهر هذا الخطأ يعني أن الإنترنت ضعيف أو يوجد مانع إعلانات)
             if (!window.Adsgram) {
-                status.innerText = "⚠️ Library not loaded (Check Internet)";
+                status.innerText = "⚠️ Library Error (Check Internet)";
                 status.style.color = "red";
                 return;
             }
@@ -188,23 +188,21 @@
                 }).then(r => r.json()).then(d => {
                     updateUI({balance: d.new_balance});
                     document.getElementById('stat-ads').innerText = d.ads_watched;
-                    status.innerText = "✅ +100";
+                    status.innerText = "✅ +250";
                     status.style.color = "#2ecc71";
                 });
             }).catch((result) => {
-                // التعامل مع الأخطاء (No Fill)
-                console.log(result);
-                status.innerText = "❌ Error: " + (result.description || "Skipped");
+                status.innerText = "❌ Skipped / Error";
                 status.style.color = "#e74c3c";
             });
         }
 
         function claimDaily() {
-            fetch('/api/daily_bonus', {
+            fetch('/api/daily', {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id})
             }).then(r => r.json()).then(d => {
-                if(d.success) { updateUI({balance: d.new_balance}); alert("🎁 Bonus Claimed!"); }
-                else alert("⏳ Come back tomorrow!");
+                if(d.success) { updateUI({balance: d.new_balance}); alert("🎁 +50 Points!"); }
+                else alert("⏳ غداً / Tomorrow");
             });
         }
 
@@ -213,7 +211,7 @@
             const amount = document.getElementById('withdraw-amount').value;
             
             if(!wallet || wallet.length < 5) return alert("محفظة خاطئة!");
-            if(!amount || amount < 50000) return alert("الحد الأدنى 50,000");
+            if(!amount || amount < 100000) return alert("الحد الأدنى 100,000");
             
             fetch('/api/withdraw', {
                 method: 'POST',
