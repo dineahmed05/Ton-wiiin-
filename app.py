@@ -6,35 +6,38 @@ import requests
 
 app = Flask(__name__)
 
-# قاعدة البيانات
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_pro_v6.db'
+# --- إعدادات قاعدة البيانات والأمان ---
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_final_v9.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'DiamondSecretKey2025'
+app.config['SECRET_KEY'] = 'SuperMegaKey2025'
 
-# 🔴 إعدادات البوت (توكنك وآيديك)
+# 🔴 معلومات البوت (لا تغيرها)
 BOT_TOKEN = "8555461747:AAEQ_S9VDDPl6ICb-Nh1AC6BJ_05WDWUCB8"
 ADMIN_ID = 1207530445
 
 db = SQLAlchemy(app)
 
-# --- الجداول ---
+# --- هيكل قاعدة البيانات ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     username = db.Column(db.String(100))
     balance = db.Column(db.Integer, default=0)
     
-    # إحصائيات
+    # الإحصائيات
     ads_watched = db.Column(db.Integer, default=0)       
     total_withdrawn = db.Column(db.Float, default=0.0)   
     referral_count = db.Column(db.Integer, default=0)    
     
-    # نظام الإحالة (التعقب)
-    referrer_id = db.Column(db.Integer, nullable=True)   # من دعاني؟
-    referral_bonus_paid = db.Column(db.Boolean, default=False) # هل دفعنا المكافأة؟
+    # الإحالة
+    referrer_id = db.Column(db.Integer, nullable=True)   
+    referral_bonus_paid = db.Column(db.Boolean, default=False) 
     
+    # البيانات الشخصية
     wallet = db.Column(db.String(150), nullable=True)
     language = db.Column(db.String(10), default='ar')
+    
+    # التوقيتات
     last_daily_bonus = db.Column(db.DateTime, nullable=True)
     last_ad_watched = db.Column(db.DateTime, nullable=True)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -44,8 +47,13 @@ class Withdraw(db.Model):
     user_id = db.Column(db.Integer)
     username = db.Column(db.String(100))
     amount_coins = db.Column(db.Integer)
-    ton_value = db.Column(db.Float)
-    usd_value = db.Column(db.Float)
+    
+    # التفاصيل المالية
+    gross_usd = db.Column(db.Float) # المبلغ قبل الخصم
+    fee_usd = db.Column(db.Float)   # الرسوم
+    net_usd = db.Column(db.Float)   # الصافي للمستخدم
+    net_ton = db.Column(db.Float)   # الصافي بالتون
+    
     wallet = db.Column(db.String(150))
     status = db.Column(db.String(20), default='pending')
     date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -53,15 +61,17 @@ class Withdraw(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- 📊 إعدادات الاقتصاد والربح ---
-COINS_PER_AD = 250        # سعر الإعلان (جيد جداً)
-REFERRAL_BONUS = 1000     # مكافأة الإحالة (بعد الشرط)
-ADS_CONDITION = 20        # شرط الإحالة (مشاهدة 20 إعلان)
-MIN_WITHDRAW = 100000     # الحد الأدنى للسحب
-DOLLAR_RATE = 0.25        # 100 ألف نقطة = 0.25$
-TON_PRICE = 6.5           # سعر التون التقريبي
+# --- 💰 الاقتصاد الجديد (حسب طلبك) 💰 ---
+COINS_PER_AD = 1000      # ✅ 1000 نقطة للإعلان الواحد
+MIN_WITHDRAW = 100000    # الحد الأدنى 100 ألف
+DOLLAR_RATE = 1.0        # 100 ألف نقطة = 1 دولار
+WITHDRAW_FEE = 0.20      # خصم 0.2 دولار رسوم
+TON_PRICE = 6.5          # سعر التون (تقديري)
 
-# دالة إرسال الإشعارات
+# مكافأة الإحالة (20 إعلان = 20,000 نقطة للمضيف)
+REFERRAL_BONUS = 20000   
+ADS_REQUIRED_FOR_REF = 20 
+
 def send_telegram_msg(chat_id, text):
     if not BOT_TOKEN or not chat_id: return
     try:
@@ -69,7 +79,7 @@ def send_telegram_msg(chat_id, text):
         requests.post(url, json={'chat_id': chat_id, 'text': text})
     except: pass
 
-# --- API ---
+# --- المسارات (Routes) ---
 
 @app.route('/')
 def home():
@@ -79,34 +89,27 @@ def home():
 def login():
     data = request.json
     uid = data.get('id')
-    
-    # 🔴 الحل لمشكلة تصفير النقاط:
-    # نبحث عن المستخدم أولاً، إذا وجدناه لا نعدل رصيده
     user = User.query.get(uid)
     
     if not user:
-        # مستخدم جديد فقط
+        # تسجيل جديد
         ref_id = data.get('start_param')
         final_ref = ref_id if (ref_id and str(ref_id) != str(uid)) else None
         
         user = User(
-            id=uid, 
-            name=data.get('name'), 
-            username=data.get('username'),
-            referrer_id=final_ref
+            id=uid, name=data.get('name'), username=data.get('username'), referrer_id=final_ref
         )
         db.session.add(user)
         
-        # إشعار للمضيف (بدون دفع المكافأة الآن)
         if final_ref:
             referrer = User.query.get(final_ref)
             if referrer:
                 referrer.referral_count += 1
-                send_telegram_msg(final_ref, f"👤 انضم عضو جديد عبر رابطك: {data.get('name')}\n(ستحصل على {REFERRAL_BONUS} نقطة بعد مشاهدته {ADS_CONDITION} إعلانات)")
+                send_telegram_msg(final_ref, f"👤 انضم عضو جديد عبر رابطك: {data.get('name')}")
         
         db.session.commit()
     else:
-        # مستخدم قديم: نحدث اسمه فقط، لا نلمس الرصيد
+        # تحديث البيانات دون مسح الرصيد
         user.name = data.get('name')
         user.username = data.get('username')
         db.session.commit()
@@ -126,23 +129,22 @@ def watch():
     user = User.query.get(uid)
     
     if user:
-        # حماية الوقت (10 ثواني)
+        # حماية من التكرار السريع (10 ثواني)
         now = datetime.utcnow()
         if user.last_ad_watched and (now - user.last_ad_watched).total_seconds() < 10: 
             return jsonify({"error": "Too fast"}), 429
             
         user.balance += COINS_PER_AD
         user.ads_watched += 1
-        user.last_ad_watched = now
+        user.last_ad_watched = now 
         
-        # 🔥 التحقق من شرط الإحالة (الجزئية التي طلبتها) 🔥
-        if user.referrer_id and not user.referral_bonus_paid and user.ads_watched >= ADS_CONDITION:
-            # الوصول للمضيف
-            referrer = User.query.get(user.referrer_id)
-            if referrer:
-                referrer.balance += REFERRAL_BONUS
-                user.referral_bonus_paid = True # تم الدفع، لن ندفع مرة أخرى
-                send_telegram_msg(user.referrer_id, f"💰 مبروك! أحد أصدقائك أكمل {ADS_CONDITION} إعلانات.\nتمت إضافة {REFERRAL_BONUS} نقطة لرصيدك.")
+        # التحقق من شرط الإحالة (20 إعلان)
+        if user.referrer_id and not user.referral_bonus_paid and user.ads_watched >= ADS_REQUIRED_FOR_REF:
+            ref = User.query.get(user.referrer_id)
+            if ref:
+                ref.balance += REFERRAL_BONUS
+                user.referral_bonus_paid = True
+                send_telegram_msg(user.referrer_id, f"💰 مبروك! حصلت على {REFERRAL_BONUS} نقطة من الإحالة.")
         
         db.session.commit()
         return jsonify({"success": True, "new_balance": user.balance, "ads_watched": user.ads_watched})
@@ -159,9 +161,15 @@ def withdraw():
     user = User.query.get(uid)
     
     if user and amount >= MIN_WITHDRAW and user.balance >= amount:
-        # الحسابات
-        usd_val = (amount / 100000) * DOLLAR_RATE
-        ton_val = usd_val / TON_PRICE
+        # 1. القيمة الإجمالية (100 ألف = 1 دولار)
+        gross_usd = (amount / 100000) * DOLLAR_RATE
+        
+        # 2. القيمة الصافية (بعد خصم 0.2 دولار)
+        net_usd = gross_usd - WITHDRAW_FEE
+        if net_usd < 0: net_usd = 0
+        
+        # 3. التحويل لتون
+        net_ton = net_usd / TON_PRICE
         
         user.wallet = wallet
         user.balance -= amount
@@ -169,13 +177,14 @@ def withdraw():
         
         wd = Withdraw(
             user_id=uid, username=user.username, amount_coins=amount,
-            ton_value=ton_val, usd_value=usd_val, wallet=wallet
+            gross_usd=gross_usd, fee_usd=WITHDRAW_FEE, net_usd=net_usd,
+            net_ton=net_ton, wallet=wallet
         )
         db.session.add(wd)
         db.session.commit()
         
-        # إشعار لك (الأدمن)
-        msg = f"🚨 <b>طلب سحب جديد!</b>\n👤 @{user.username}\n💰 {amount} نقطة\n💵 {usd_val:.2f} $\n💎 {ton_val:.4f} TON\n🏦 <code>{wallet}</code>"
+        # إشعار للأدمن
+        msg = f"🚨 <b>سحب جديد!</b>\n👤 @{user.username}\n💰 {amount} نقطة\n💵 الإجمالي: {gross_usd:.2f}$\n✂️ الصافي: {net_usd:.2f}$ (-{WITHDRAW_FEE})\n💎 <b>{net_ton:.4f} TON</b>\n🏦 <code>{wallet}</code>"
         send_telegram_msg(ADMIN_ID, msg)
         
         return jsonify({"success": True, "new_balance": user.balance})
@@ -190,7 +199,8 @@ def daily():
         now = datetime.utcnow()
         if user.last_daily_bonus and (now - user.last_daily_bonus) < timedelta(days=1):
             return jsonify({"success": False})
-        user.balance += 50
+        
+        user.balance += 500 # مكافأة يومية
         user.last_daily_bonus = now
         db.session.commit()
         return jsonify({"success": True, "new_balance": user.balance})
@@ -215,4 +225,4 @@ def admin():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-        
+    
