@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Admin</title></head>
+<body>
+    <h1>Admin Panel</h1>
+    <p>Users: {{ stats.users }} | Ads: {{ stats.ads }}</p>
+    <hr>
+    <h3>Withdraw Requests</h3>
+    <table border="1">
+        <tr><th>User ID</th><th>Coins</th><th>TON Value</th><th>Wallet</th><th>Action</th></tr>
+        {% for r in reqs %}
+        <tr>
+            <td>{{ r.user_id }}</td>
+            <td>{{ r.amount_coins }}</td>
+            <td style="color:blue; font-weight:bold;">{{ r.ton_value }} TON</td>
+            <td>{{ r.wallet }}</td>
+            <td>Manual Pay Needed</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
