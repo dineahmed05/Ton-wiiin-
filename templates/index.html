@@ -3,178 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ton Reward Bot</title>
+    <title>Watch & Win</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/js/adsgram.js?v=1"></script>
     <style>
-        :root { --primary: #007aff; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        /* تصميم أنيق وعصري */
+        :root { --primary: #0098EA; --bg: #121212; --card: #1e1e1e; --text: #ffffff; --success: #2ecc71; }
+        body { margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; }
         
-        /* Glassmorphism Card */
-        .card { background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; margin: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        /* البطاقات */
+        .card { background: linear-gradient(145deg, #1e1e1e, #252525); border-radius: 20px; padding: 25px; margin: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; border: 1px solid rgba(255,255,255,0.05); }
         
-        .balance-num { font-size: 38px; font-weight: 800; background: linear-gradient(45deg, #007aff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        /* الرصيد */
+        .balance-container { margin: 20px 0; }
+        .balance-num { font-size: 42px; font-weight: 800; color: var(--primary); text-shadow: 0 0 20px rgba(0, 152, 234, 0.3); }
+        .currency { font-size: 14px; color: #888; letter-spacing: 2px; text-transform: uppercase; }
         
-        .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: transform 0.1s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:active { transform: scale(0.98); }
+        /* الأزرار */
+        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(0, 152, 234, 0.3); }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-admin { background: #e74c3c; color: white; margin-top: 20px; display: none; } /* مخفي افتراضياً */
+
+        /* التنقل السفلي */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { opacity: 0.6; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.3s; cursor: pointer; }
+        .nav-item.active { opacity: 1; color: var(--primary); transform: translateY(-2px); }
+        .icon { font-size: 24px; }
         
-        /* Navigation */
-        .nav { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
-        .nav-item { opacity: 0.5; font-size: 12px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item.active { opacity: 1; color: var(--primary); }
-        .icon { font-size: 22px; margin-bottom: 4px; }
-        
-        /* Pages */
-        .page { display: none; animation: fadeIn 0.3s; }
+        /* الصفحات */
+        .page { display: none; animation: fadeIn 0.4s ease; }
         .page.active { display: block; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* حقل الإدخال */
+        input { width: 90%; padding: 15px; border-radius: 12px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; outline: none; margin-bottom: 10px; text-align: center; }
+        input:focus { border-color: var(--primary); }
     </style>
 </head>
 <body>
 
     <div id="p-home" class="page active">
+        <button id="admin-btn" class="btn btn-admin" onclick="openAdmin()">🔒 Admin Panel</button>
+
         <div class="card">
-            <h3 id="txt-balance-title">Current Balance</h3>
-            <div class="balance-num" id="balance">0</div>
-            <div style="color: #aaa;">COINS</div>
+            <h3 id="txt-balance">Rassidi</h3>
+            <div class="balance-container">
+                <div class="balance-num" id="balance">0</div>
+                <div class="currency">Points</div>
+            </div>
         </div>
 
         <div class="card">
-            <h3 id="txt-earn-title">Earn Coins</h3>
-            <p id="txt-earn-desc" style="color:#888;">Watch ads to earn rewards.</p>
+            <h3 id="txt-earn">Ribh Sari3</h3>
+            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">Chahed Video wa Irbah +100 Points</p>
             <button class="btn btn-primary" onclick="showAd()">
-                📺 <span id="btn-watch">Watch Ad (+100)</span>
+                <span>📺</span> <span id="btn-watch">Chahed Alan (+100)</span>
             </button>
-            <p id="status-msg" style="margin-top:10px; font-size:14px;"></p>
+            <p id="status-msg" style="margin-top:15px; font-size:14px; font-weight:bold;"></p>
         </div>
     </div>
 
     <div id="p-wallet" class="page">
         <div class="card">
-            <h3 id="txt-withdraw-title">Withdraw Funds</h3>
-            <p id="txt-min-withdraw" style="color:#aaa;">Min Withdraw: 50,000 Coins</p>
-            <input type="text" id="wallet-input" placeholder="Paste your TON Wallet" style="width: 90%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; margin-bottom: 10px;">
-            <button class="btn btn-primary" onclick="requestWithdraw()" id="btn-withdraw">Request Payment</button>
+            <h3>Sohobate</h3>
+            <p style="color:#aaa; margin-bottom:20px;">Min Withdraw: 50,000 Points</p>
+            <input type="text" id="wallet-input" placeholder="Mahfadat TON">
+            <button class="btn btn-primary" onclick="requestWithdraw()">
+                <span>💸</span> <span>Talab Sahb</span>
+            </button>
         </div>
     </div>
 
     <div id="p-friends" class="page">
         <div class="card">
-            <h3 id="txt-invite-title">Invite Friends</h3>
-            <p id="txt-invite-desc">Get 500 Coins for each friend!</p>
-            <div style="background:#222; padding:10px; border-radius:8px; word-break:break-all; font-size:12px; color: var(--primary);" id="ref-link">...</div>
-            <button class="btn btn-primary" onclick="copyRef()" id="btn-copy">Copy Link</button>
+            <h3>Asdi9a2</h3>
+            <p>Rabit Da3wa Khass bik (+500 Points)</p>
+            <div style="background:#2a2a2a; padding:15px; border-radius:10px; word-break:break-all; font-size:13px; color: var(--primary); margin: 15px 0;" id="ref-link">...</div>
+            <button class="btn btn-primary" onclick="copyRef()">
+                <span>📋</span> <span>Naskh Rabit</span>
+            </button>
         </div>
     </div>
 
     <div class="nav">
         <div class="nav-item active" onclick="nav('p-home', this)">
-            <span class="icon">🏠</span> <span id="nav-home">Home</span>
+            <span class="icon">🏠</span> Home
         </div>
         <div class="nav-item" onclick="nav('p-wallet', this)">
-            <span class="icon">🏦</span> <span id="nav-wallet">Wallet</span>
+            <span class="icon">💰</span> Wallet
         </div>
         <div class="nav-item" onclick="nav('p-friends', this)">
-            <span class="icon">👥</span> <span id="nav-friends">Friends</span>
+            <span class="icon">👥</span> Friends
         </div>
     </div>
 
     <script>
-        // --- TRANSLATIONS (قاموس اللغات) ---
-        const langData = {
-            en: {
-                balanceTitle: "Current Balance",
-                earnTitle: "Earn Coins",
-                earnDesc: "Watch ads to earn rewards.",
-                btnWatch: "Watch Ad (+100)",
-                withdrawTitle: "Withdraw Funds",
-                minWithdraw: "Min Withdraw: 50,000 Coins",
-                btnWithdraw: "Request Payment",
-                inviteTitle: "Invite Friends",
-                inviteDesc: "Get 500 Coins for each friend!",
-                btnCopy: "Copy Link",
-                navHome: "Home",
-                navWallet: "Wallet",
-                navFriends: "Friends",
-                statusSuccess: "You earned 100 coins! 🎉",
-                statusFail: "Ad closed/failed ❌",
-                alertSent: "Withdrawal request sent!",
-                alertLow: "Not enough balance!",
-                alertWallet: "Enter wallet address first!"
-            },
-            ar: {
-                balanceTitle: "رصيدك الحالي",
-                earnTitle: "اربح العملات",
-                earnDesc: "شاهد الإعلانات لتربح المكافآت.",
-                btnWatch: "شاهد إعلان (+100)",
-                withdrawTitle: "سحب الأرباح",
-                minWithdraw: "الحد الأدنى: 50,000 عملة",
-                btnWithdraw: "طلب سحب",
-                inviteTitle: "دعوة الأصدقاء",
-                inviteDesc: "احصل على 500 عملة لكل صديق!",
-                btnCopy: "نسخ الرابط",
-                navHome: "الرئيسية",
-                navWallet: "المحفظة",
-                navFriends: "الأصدقاء",
-                statusSuccess: "ربحت 100 عملة! 🎉",
-                statusFail: "لم تكمل الإعلان ❌",
-                alertSent: "تم إرسال طلب السحب بنجاح!",
-                alertLow: "رصيدك غير كافٍ للسحب!",
-                alertWallet: "أدخل عنوان المحفظة أولاً!"
-            }
-        };
+        // --- إعدادات البوت الهامة ---
+        const BLOCK_ID = "18732";           // 🟢 البلوك آيدي الخاص بك
+        const BOT_USERNAME = "Watchandwiiinbot"; // 🟢 اسم البوت الخاص بك
+        const ADMIN_USERNAME = "dineahmed05"; // 🟢 يوزر الأدمن (أنت)
 
         const tg = window.Telegram.WebApp;
-        tg.expand();
-        const user = tg.initDataUnsafe.user || {id: 123, first_name: "Test", language_code: "ar"}; // Test Data
+        tg.expand(); // توسيع الشاشة
         
-        // تحديد اللغة
-        let currLang = (user.language_code === 'ar') ? 'ar' : 'en';
-        if(document.dir) document.dir = (currLang === 'ar') ? 'rtl' : 'ltr';
-
-        function setLanguage(lang) {
-            const t = langData[lang];
-            document.getElementById('txt-balance-title').innerText = t.balanceTitle;
-            document.getElementById('txt-earn-title').innerText = t.earnTitle;
-            document.getElementById('txt-earn-desc').innerText = t.earnDesc;
-            document.getElementById('btn-watch').innerText = t.btnWatch;
-            document.getElementById('txt-withdraw-title').innerText = t.withdrawTitle;
-            document.getElementById('txt-min-withdraw').innerText = t.minWithdraw;
-            document.getElementById('btn-withdraw').innerText = t.btnWithdraw;
-            document.getElementById('txt-invite-title').innerText = t.inviteTitle;
-            document.getElementById('txt-invite-desc').innerText = t.inviteDesc;
-            document.getElementById('btn-copy').innerText = t.btnCopy;
-            document.getElementById('nav-home').innerText = t.navHome;
-            document.getElementById('nav-wallet').innerText = t.navWallet;
-            document.getElementById('nav-friends').innerText = t.navFriends;
+        // بيانات المستخدم الافتراضية (للتجربة خارج تيليجرام)
+        const user = tg.initDataUnsafe.user || {id: 0, first_name: "Guest", username: "guest"};
+        
+        // --- التحقق من الأدمن ---
+        // إذا كان المستخدم هو أنت، سيظهر زر الأدمن
+        if (user.username && user.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+            document.getElementById('admin-btn').style.display = 'block';
         }
-        setLanguage(currLang);
 
-        // --- LOGIC ---
         const api = '/api';
-        
+
+        // تشغيل البوت وجلب البيانات
         async function init() {
+            // إرسال بيانات الدخول للسيرفر
             const res = await fetch(api + '/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     id: user.id,
-                    first_name: user.first_name,
-                    lang_code: currLang,
-                    start_param: tg.initDataUnsafe.start_param
+                    name: user.first_name,
+                    username: user.username,
+                    start_param: tg.initDataUnsafe.start_param // لجلب معرف الإحالة
                 })
             });
             const data = await res.json();
-            document.getElementById('balance').innerText = data.balance;
-            if(data.wallet) document.getElementById('wallet-input').value = data.wallet;
             
-            // رابط الإحالة
-            const botName = "Watch_and_wiiin_bot"; // استبدل باسم بوتك بدقة
-            document.getElementById('ref-link').innerText = `https://t.me/${botName}?startapp=${user.id}`;
+            // تحديث الرصيد في الشاشة
+            document.getElementById('balance').innerText = data.balance.toLocaleString();
+            if(data.wallet) document.getElementById('wallet-input').value = data.wallet;
+
+            // إنشاء رابط الدعوة
+            document.getElementById('ref-link').innerText = `https://t.me/${BOT_USERNAME}?startapp=${user.id}`;
         }
 
+        // دالة التنقل بين الصفحات
         function nav(pageId, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -182,31 +149,37 @@
             el.classList.add('active');
         }
 
+        // دالة عرض الإعلان (المصدر الرئيسي للربح)
         function showAd() {
-            // ضع الكود الخاص بك هنا
-            const AdController = window.Adsgram.init({ blockId: "YOUR_ADSGRAM_BLOCK_ID" }); 
+            // تهيئة Adsgram
+            const AdController = window.Adsgram.init({ blockId: BLOCK_ID }); 
             const msg = document.getElementById('status-msg');
-            msg.innerText = "...";
+            msg.innerText = "Jari Tahmil...";
+            msg.style.color = "#aaa";
 
             AdController.show().then((result) => {
+                // المستخدم شاهد الإعلان بنجاح
                 fetch(api + '/watch', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({user_id: user.id})
                 }).then(r => r.json()).then(d => {
-                    document.getElementById('balance').innerText = d.new_balance;
-                    msg.innerText = langData[currLang].statusSuccess;
-                    msg.style.color = "#0f0";
+                    document.getElementById('balance').innerText = d.new_balance.toLocaleString();
+                    msg.innerText = "Mabrouk! +100 Points 🎉";
+                    msg.style.color = "#2ecc71"; // لون أخضر
+                    playSound("success"); // صوت نجاح (اختياري)
                 });
             }).catch((result) => {
-                msg.innerText = langData[currLang].statusFail;
-                msg.style.color = "red";
+                // المستخدم أغلق الإعلان أو حدث خطأ
+                msg.innerText = "Khata2! La youjad ribh ❌";
+                msg.style.color = "#e74c3c"; // لون أحمر
             });
         }
 
+        // دالة طلب السحب
         async function requestWithdraw() {
             const wallet = document.getElementById('wallet-input').value;
-            if(!wallet) return alert(langData[currLang].alertWallet);
+            if(!wallet || wallet.length < 5) return alert("Min fadlik adkhil mahfada sahiha!");
             
             const res = await fetch(api + '/withdraw', {
                 method: 'POST',
@@ -215,20 +188,24 @@
             });
             const d = await res.json();
             if(d.success) {
-                alert(langData[currLang].alertSent);
+                alert("Tam Talab Sahb Binajah! ✅");
                 document.getElementById('balance').innerText = "0";
             } else {
-                alert(langData[currLang].alertLow);
+                alert("Rassid Ghayr Kafi (Min 50,000) ❌");
             }
         }
         
         function copyRef() {
             navigator.clipboard.writeText(document.getElementById('ref-link').innerText);
-            alert("Copied!");
+            alert("Tam Naskh Rabit! 📋");
+        }
+
+        function openAdmin() {
+            // يفتح صفحة الأدمن السرية
+            window.location.href = "/admin_panel_secret_key_99";
         }
 
         init();
     </script>
 </body>
-  </html>
-  
+</html>
