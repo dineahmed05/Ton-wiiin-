@@ -10,7 +10,7 @@
     
     <style>
         :root { --primary: #0098EA; --bg: #101010; --card: #1e1e1e; --text: #fff; --green: #2ecc71; --red: #e74c3c; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; }
         
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,152,234,0.1), transparent); }
         .big-balance { text-align: center; margin: 20px 0; }
@@ -39,6 +39,7 @@
         .stat-val { font-size: 15px; font-weight: bold; color: var(--primary); display: block; }
         
         .convert-info { font-size: 14px; color: #ddd; margin-bottom: 15px; background: rgba(46,204,113,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(46,204,113,0.2); }
+        .fee-info { font-size: 12px; color: #e74c3c; display: block; margin-top: 5px; }
         #admin-btn { background: var(--red); width: auto; margin: 0 auto 10px; display: none; padding: 8px 15px; font-size: 12px; }
     </style>
 </head>
@@ -68,7 +69,7 @@
 
         <div class="card">
             <h3 data-key="earn">زيادة الرصيد</h3>
-            <p style="color:#aaa; font-size:13px; margin-bottom: 10px;">شاهد إعلان واحد = <b>+250 نقطة</b> 🚀</p>
+            <p style="color:#aaa; font-size:13px; margin-bottom: 10px;">شاهد إعلان واحد = <b>+1000 نقطة</b> 🔥</p>
             <button class="btn btn-primary" onclick="showAd()">📺 <span data-key="watch">شاهد إعلان</span></button>
             <p id="ad-status" style="margin-top:10px; font-size:12px; min-height:20px;"></p>
         </div>
@@ -79,11 +80,13 @@
             <h3 data-key="withdraw">سحب الأرباح</h3>
             
             <div class="convert-info">
-                <span>القيمة الحالية:</span><br>
-                💵 <span id="calc-usd">0.00</span> $ &nbsp;|&nbsp; 💎 <span id="calc-ton">0.00</span> TON
+                <span>الإجمالي:</span> 💵 <span id="calc-gross">0.00</span> $<br>
+                <span class="fee-text">الرسوم: -0.20 $</span><br>
+                <hr style="border-color:rgba(255,255,255,0.1)">
+                <b>الصافي: 💎 <span id="calc-ton">0.00</span> TON</b>
             </div>
 
-            <p style="font-size:11px; color:#888;">الحد الأدنى: 100,000 نقطة (0.25$)</p>
+            <p style="font-size:11px; color:#888;">الحد الأدنى: 100,000 نقطة</p>
             
             <input type="number" id="withdraw-amount" placeholder="أدخل المبلغ (نقاط)" oninput="calculateValue()">
             <input type="text" id="wallet-input" placeholder="عنوان محفظة TON">
@@ -95,7 +98,7 @@
     <div id="p-friends" class="page">
         <div class="card">
             <h3 data-key="invite">برنامج الإحالة</h3>
-            <p style="font-size:13px; color:#ccc;">اربح <b>1000 نقطة</b> عن كل صديق!</p>
+            <p style="font-size:13px; color:#ccc;">اربح <b>20,000 نقطة</b> عن كل صديق!</p>
             <p style="font-size:11px; color:#e74c3c;">⚠️ الشرط: يشاهد الصديق 20 إعلان.</p>
             <input type="text" id="ref-link" readonly value="...">
             <button class="btn btn-primary" onclick="copyRef()">📋 نسخ الرابط</button>
@@ -114,8 +117,9 @@
         const BOT_USERNAME = "Watchandwiiinbot"; 
         const ADMIN_ID = "1207530445";      
         
-        // الاقتصاد الجديد: 100,000 نقطة = 0.25$
-        const DOLLAR_VAL = 0.25; 
+        // الاقتصاد الجديد
+        const DOLLAR_VAL = 1.0;  // 100 ألف = 1 دولار
+        const FEE_USD = 0.20;    // الرسوم
         const TON_PRICE = 6.5;
 
         const tg = window.Telegram.WebApp;
@@ -158,16 +162,21 @@
             document.getElementById('balance').innerText = userBalance.toLocaleString();
         }
 
-        // --- حساب القيمة الحية ---
         function calculateValue() {
             const amount = document.getElementById('withdraw-amount').value;
-            const usd = (amount / 100000) * DOLLAR_VAL;
-            const ton = usd / TON_PRICE;
-            document.getElementById('calc-usd').innerText = usd.toFixed(2);
+            // 100 ألف = 1 دولار
+            const gross = (amount / 100000) * DOLLAR_VAL;
+            
+            // خصم الرسوم
+            let net = gross - FEE_USD;
+            if(net < 0) net = 0;
+            
+            const ton = net / TON_PRICE;
+            
+            document.getElementById('calc-gross').innerText = gross.toFixed(2);
             document.getElementById('calc-ton').innerText = ton.toFixed(4);
         }
 
-        // --- عرض الإعلان (المصححة) ---
         function showAd() {
             const status = document.getElementById('ad-status');
             status.innerText = (currentLang==='ar') ? "جاري التحميل..." : "Loading...";
@@ -188,7 +197,7 @@
                 }).then(r => r.json()).then(d => {
                     updateUI({balance: d.new_balance});
                     document.getElementById('stat-ads').innerText = d.ads_watched;
-                    status.innerText = "✅ +250";
+                    status.innerText = "✅ +1000";
                     status.style.color = "#2ecc71";
                 });
             }).catch((result) => {
@@ -201,7 +210,7 @@
             fetch('/api/daily', {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id})
             }).then(r => r.json()).then(d => {
-                if(d.success) { updateUI({balance: d.new_balance}); alert("🎁 +50 Points!"); }
+                if(d.success) { updateUI({balance: d.new_balance}); alert("🎁 +500 Points!"); }
                 else alert("⏳ غداً / Tomorrow");
             });
         }
