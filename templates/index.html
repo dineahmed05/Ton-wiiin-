@@ -3,68 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ton Wiiin</title>
+    <title>Ton Wiiin Pro</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     
     <style>
-        body { 
-            font-family: sans-serif; 
-            background-color: #101010; 
-            color: white; 
-            text-align: center; 
-            padding: 20px; 
-        }
-        .card { 
-            background: #1e1e1e; 
-            border-radius: 15px; 
-            padding: 20px; 
-            margin: 20px auto; 
-            max-width: 400px;
-            border: 1px solid #333;
-        }
-        .btn { 
-            background: #0098EA; 
-            color: white; 
-            border: none; 
-            padding: 15px 30px; 
-            border-radius: 10px; 
-            font-size: 18px; 
-            cursor: pointer; 
-            width: 100%;
-            margin-top: 10px;
-        }
-        #status { 
-            margin-top: 15px; 
-            font-size: 14px; 
-            color: #aaa; 
-        }
+        /* --- التصميم الاحترافي (Dark Mode) --- */
+        :root { --primary: #0098EA; --bg: #101010; --card: #1e1e1e; --text: #ffffff; --green: #2ecc71; --red: #e74c3c; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); padding-bottom: 90px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        /* الهيدر */
+        .header { padding: 20px; background: linear-gradient(180deg, rgba(0,152,234,0.15) 0%, transparent 100%); display: flex; justify-content: space-between; align-items: center; }
+        .user-info h2 { margin: 0; font-size: 16px; }
+        .user-info p { margin: 0; font-size: 11px; color: #888; }
+        
+        /* بطاقة الرصيد الكبيرة */
+        .big-balance { text-align: center; margin: 20px 0; }
+        .balance-amount { font-size: 46px; font-weight: 800; color: white; text-shadow: 0 0 20px rgba(0,152,234,0.4); }
+        .balance-label { font-size: 14px; color: var(--primary); background: rgba(0,152,234,0.1); padding: 4px 12px; border-radius: 20px; display: inline-block; }
+
+        /* البطاقات */
+        .card { background-color: var(--card); border-radius: 18px; padding: 20px; margin: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        
+        /* الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; }
+        .stat-val { font-size: 18px; font-weight: bold; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 11px; color: #777; }
+
+        /* الأزرار */
+        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s; color: white; }
+        .btn-primary { background: linear-gradient(90deg, #0098EA, #0077b5); box-shadow: 0 4px 15px rgba(0,152,234,0.3); }
+        .btn-success { background: linear-gradient(90deg, #2ecc71, #27ae60); box-shadow: 0 4px 15px rgba(46,204,113,0.3); }
+        .btn-admin { background: #e74c3c; width: auto; padding: 10px 20px; font-size: 14px; display: none; margin: 0 auto 10px; }
+        .btn:active { transform: scale(0.97); }
+
+        /* المدخلات */
+        .input-box { background: #151515; border: 1px solid #333; padding: 15px; border-radius: 12px; width: 88%; color: white; text-align: center; font-size: 16px; outline: none; margin-bottom: 10px; }
+        .input-box:focus { border-color: var(--primary); }
+
+        /* شريط التحويل */
+        .convert-bar { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); padding: 12px; border-radius: 12px; display: flex; justify-content: space-around; font-size: 14px; margin-bottom: 15px; color: #ddd; }
+
+        /* القائمة السفلية */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { opacity: 0.5; font-size: 10px; text-align: center; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .nav-item.active { opacity: 1; color: var(--primary); transform: translateY(-2px); }
+        .nav-icon { font-size: 22px; }
+
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>💰 رصيدك: <span id="balance">0</span></h1>
+    <div class="header">
+        <div class="user-info">
+            <h2 id="display-name">...</h2>
+            <p>ID: <span id="display-id">...</span></p>
+        </div>
+        <button onclick="toggleLang()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:5px 10px; border-radius:8px; font-size:12px;">🌐 <span id="lang-txt">AR</span></button>
     </div>
 
-    <div class="card">
-        <h3>شاهد واربح</h3>
-        <button class="btn" onclick="showAd()">📺 مشاهدة إعلان (+100)</button>
-        <p id="status"></p>
+    <button id="admin-btn" class="btn btn-admin" onclick="location.href='/admin_panel_secret_key_99'">🔒 لوحة التحكم</button>
+
+    <div id="p-home" class="page active">
+        <div class="big-balance">
+            <div class="balance-amount" id="balance">0</div>
+            <span class="balance-label" data-key="points">نقطة (Points)</span>
+        </div>
+
+        <div class="card">
+            <h3 data-key="my_stats">إحصائياتي</h3>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-ads">0</div>
+                    <div class="stat-lbl" data-key="ads_viewed">إعلانات</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-refs">0</div>
+                    <div class="stat-lbl" data-key="invites">دعوات</div>
+                </div>
+                <div class="stat-box" onclick="claimDaily()" style="cursor:pointer; border:1px solid var(--green);">
+                    <div class="stat-val">🎁</div>
+                    <div class="stat-lbl" data-key="daily">يومية</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 data-key="earn_title">مشاهدة الإعلانات</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;" data-key="earn_desc">شاهد إعلانات قصيرة واربح 100 نقطة فوراً</p>
+            <button class="btn btn-primary" onclick="showAd()">
+                📺 <span data-key="watch_btn">شاهد إعلان (+100)</span>
+            </button>
+            <p id="ad-status" style="margin-top:10px; font-size:12px; min-height:20px;"></p>
+        </div>
+    </div>
+
+    <div id="p-wallet" class="page">
+        <div class="card">
+            <h3 data-key="wd_title">سحب الأرباح</h3>
+            
+            <div class="convert-bar">
+                <span>💵 ≈ <span id="usd-val">0.00</span> $</span>
+                <span>💎 <span id="ton-val">0.00</span> TON</span>
+            </div>
+
+            <p style="font-size:12px; color:#aaa; margin-bottom:10px;" data-key="wd_min">الحد الأدنى: 50,000 نقطة</p>
+            <input type="text" class="input-box" id="wallet-input" placeholder="عنوان محفظة TON (UQ...)">
+            
+            <button class="btn btn-success" onclick="withdraw()">
+                💸 <span data-key="wd_confirm">تأكيد السحب</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="p-friends" class="page">
+        <div class="card">
+            <h3 data-key="ref_title">برنامج الإحالة</h3>
+            <p style="font-size:13px; color:#ccc; line-height:1.6;" data-key="ref_desc">
+                اربح <b>500 نقطة</b> عن كل صديق.<br>
+                <span style="color:#ffcc00; font-size:11px;">⚠️ الشرط: يجب أن يشاهد الصديق 20 إعلان.</span>
+            </p>
+            
+            <input type="text" class="input-box" id="ref-link" readonly value="..." style="font-size:12px; color:var(--primary);">
+            
+            <button class="btn btn-primary" onclick="copyRef()">📋 <span data-key="copy_btn">نسخ الرابط</span></button>
+            <button class="btn" style="background:#50a7ea; margin-top:8px;" onclick="shareTelegram()">✈️ <span data-key="share_btn">مشاركة</span></button>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="nav('p-home', this)">
+            <span class="nav-icon">🏠</span> <span data-key="nav_home">الرئيسية</span>
+        </div>
+        <div class="nav-item" onclick="nav('p-wallet', this)">
+            <span class="nav-icon">💰</span> <span data-key="nav_wd">المحفظة</span>
+        </div>
+        <div class="nav-item" onclick="nav('p-friends', this)">
+            <span class="nav-icon">👥</span> <span data-key="nav_friends">الأصدقاء</span>
+        </div>
     </div>
 
     <script>
-        // إعدادات البوت
-        const BLOCK_ID = "18732"; 
+        // --- الثوابت والإعدادات ---
+        const BLOCK_ID = "18732";           
+        const BOT_USERNAME = "Watchandwiiinbot"; 
+        const ADMIN_ID_STR = "1207530445";  
+
+        // أسعار الصرف
+        const RATE_USD = 0.5 / 100000; 
+        const TON_PRICE = 6.5;         
+
+        // اللغات
+        const langData = {
+            ar: {
+                points: "نقطة", my_stats: "إحصائياتي", ads_viewed: "إعلانات", invites: "دعوات", withdrawn: "سحوبات", daily: "يومية",
+                earn_title: "زيادة الرصيد", earn_desc: "شاهد إعلانات واربح 100 نقطة", watch_btn: "شاهد إعلان (+100)",
+                wd_title: "طلب سحب", wd_min: "الحد الأدنى: 50,000 نقطة", wd_confirm: "تأكيد السحب",
+                ref_title: "دعوة الأصدقاء", ref_desc: "اربح 500 نقطة عن كل صديق (بعد 20 إعلان).", copy_btn: "نسخ الرابط", share_btn: "مشاركة",
+                nav_home: "الرئيسية", nav_wd: "السحب", nav_friends: "الأصدقاء",
+                msg_copy: "تم النسخ!", msg_sent: "تم إرسال الطلب!", msg_low: "رصيد غير كاف!", msg_bonus: "تم استلام المكافأة"
+            },
+            en: {
+                points: "Points", my_stats: "My Stats", ads_viewed: "Ads", invites: "Invites", withdrawn: "Withdrawn", daily: "Daily",
+                earn_title: "Earn Coins", earn_desc: "Watch ads to earn 100 points", watch_btn: "Watch Ad (+100)",
+                wd_title: "Withdraw", wd_min: "Min: 50,000 Points", wd_confirm: "Request Withdraw",
+                ref_title: "Referrals", ref_desc: "Earn 500 pts per friend (after 20 ads).", copy_btn: "Copy Link", share_btn: "Share",
+                nav_home: "Home", nav_wd: "Wallet", nav_friends: "Friends",
+                msg_copy: "Copied!", msg_sent: "Request Sent!", msg_low: "Low Balance!", msg_bonus: "Bonus Claimed"
+            }
+        };
+
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // 1. دالة البداية
+        const user = tg.initDataUnsafe.user || {id: 0, first_name: "Guest", username: ""};
+        let currentLang = 'ar';
+        let userBalance = 0;
+
+        // --- دالة البدء ---
         async function init() {
+            // إظهار زر الأدمن
+            if (String(user.id) === ADMIN_ID_STR) {
+                document.getElementById('admin-btn').style.display = 'block';
+            }
+
+            if(document.getElementById('display-name')) document.getElementById('display-name').innerText = user.first_name;
+            if(document.getElementById('display-id')) document.getElementById('display-id').innerText = user.id;
+
             try {
-                const user = tg.initDataUnsafe.user || {id: 0};
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -75,49 +207,144 @@
                         start_param: tg.initDataUnsafe.start_param
                     })
                 });
+                
                 const data = await res.json();
-                document.getElementById('balance').innerText = data.balance;
+                updateUI(data);
+                
+                if(data.language) { currentLang = data.language; updateLang(); }
+                if(data.wallet) document.getElementById('wallet-input').value = data.wallet;
+                
+                document.getElementById('stat-ads').innerText = data.ads_watched || 0;
+                document.getElementById('stat-refs').innerText = data.referral_count || 0;
+                
+                document.getElementById('ref-link').value = `https://t.me/${BOT_USERNAME}?startapp=${user.id}`;
+
             } catch (e) {
-                console.error(e);
+                console.error("Connection Error", e);
             }
         }
 
-        // 2. دالة عرض الإعلان (بالطريقة الجديدة)
-        async function showAd() {
-            const status = document.getElementById('status');
-            const user = tg.initDataUnsafe.user || {id: 0};
+        function updateUI(data) {
+            if(data.balance !== undefined) userBalance = data.balance;
+            document.getElementById('balance').innerText = userBalance.toLocaleString();
             
-            status.innerText = "جاري التحميل...";
+            const usd = userBalance * RATE_USD;
+            const ton = usd / TON_PRICE;
+            document.getElementById('usd-val').innerText = usd.toFixed(2);
+            document.getElementById('ton-val').innerText = ton.toFixed(4);
+        }
+
+        // --- عرض الإعلان (بالطريقة الجديدة) ---
+        function showAd() {
+            const status = document.getElementById('ad-status');
+            status.innerText = (currentLang==='ar') ? "جاري التحميل..." : "Loading...";
             
-            // التحقق من وجود المكتبة
+            // التحقق من المكتبة
             if (!window.Adsgram) {
-                status.innerText = "خطأ: المكتبة لم تتحمل (تأكد من إيقاف مانع الإعلانات)";
+                status.innerText = "Error: Library not loaded";
                 return;
             }
 
-            // الكود الرسمي من الوثائق
+            [span_0](start_span)//[span_0](end_span) تهيئة الإعلان بالرابط الجديد
             const AdController = window.Adsgram.init({ blockId: BLOCK_ID });
 
             AdController.show().then((result) => {
-                // المستخدم شاهد الإعلان للنهاية
+                [span_1](start_span)//[span_1](end_span) نجاح المشاهدة
                 fetch('/api/watch', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({user_id: user.id})
                 }).then(r => r.json()).then(d => {
-                    document.getElementById('balance').innerText = d.new_balance;
-                    status.innerText = "✅ مبروك! تمت إضافة النقاط";
-                    status.style.color = "#0f0";
+                    updateUI({balance: d.new_balance});
+                    if(d.ads_watched) document.getElementById('stat-ads').innerText = d.ads_watched;
+                    status.innerText = "✅ +100";
+                    status.style.color = "#2ecc71";
                 });
             }).catch((result) => {
-                // خطأ أو إغلاق
-                status.innerText = "❌ لم تكمل المشاهدة";
-                status.style.color = "red";
+                [span_2](start_span)//[span_2](end_span) فشل أو إغلاق
+                console.log(result);
+                status.innerText = "❌";
+                status.style.color = "#e74c3c";
             });
         }
 
-        // تشغيل
+        function claimDaily() {
+            fetch('/api/daily_bonus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id})
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    updateUI({balance: d.new_balance});
+                    alert(langData[currentLang].msg_bonus);
+                } else {
+                    alert((currentLang==='ar') ? "عد غداً!" : "Come back tomorrow!");
+                }
+            });
+        }
+
+        function withdraw() {
+            const wallet = document.getElementById('wallet-input').value;
+            if(wallet.length < 5) return alert("أدخل المحفظة!");
+            
+            fetch('/api/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id, wallet: wallet})
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    alert(langData[currentLang].msg_sent);
+                    location.reload();
+                } else {
+                    alert(langData[currentLang].msg_low);
+                }
+            });
+        }
+
+        function toggleLang() {
+            currentLang = (currentLang === 'ar') ? 'en' : 'ar';
+            updateLang();
+            fetch('/api/set_language', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id, lang: currentLang})
+            });
+        }
+
+        function updateLang() {
+            const t = langData[currentLang];
+            document.body.dir = (currentLang === 'ar') ? 'rtl' : 'ltr';
+            document.getElementById('lang-txt').innerText = currentLang.toUpperCase();
+            
+            for (let key in t) {
+                const el = document.querySelector(`[data-key="${key}"]`);
+                if(el) el.innerText = t[key];
+            }
+        }
+
+        function copyRef() {
+            const el = document.getElementById('ref-link');
+            el.select();
+            navigator.clipboard.writeText(el.value);
+            alert(langData[currentLang].msg_copy);
+        }
+
+        function shareTelegram() {
+            const link = document.getElementById('ref-link').value;
+            const msg = "Watch Ads & Earn TON! 💎🤑";
+            const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(msg)}`;
+            tg.openTelegramLink(url);
+        }
+
+        function nav(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+
         init();
     </script>
 </body>
-</html>
+    </html>
+    
