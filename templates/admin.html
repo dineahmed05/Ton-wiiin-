@@ -1,22 +1,243 @@
 <!DOCTYPE html>
-<html>
-<head><title>Admin</title></head>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة القيادة | Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .card-stat {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+        .card-stat:hover { transform: translateY(-5px); }
+        .bg-gradient-primary { background: linear-gradient(45deg, #4e73df, #224abe); }
+        .bg-gradient-success { background: linear-gradient(45deg, #1cc88a, #13855c); }
+        .bg-gradient-warning { background: linear-gradient(45deg, #f6c23e, #dda20a); }
+        
+        .stat-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            opacity: 0.2;
+        }
+
+        .main-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .table thead th {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 15px;
+        }
+        .wallet-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 250px;
+        }
+        .btn-copy {
+            background: #e2e6ea;
+            border: none;
+            border-radius: 5px;
+            padding: 2px 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-copy:hover { background: #dbeafe; color: #4e73df; }
+        .price-tag {
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: block;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .avatar-circle {
+            width: 35px;
+            height: 35px;
+            background: #4e73df;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
 <body>
-    <h1>Admin Panel</h1>
-    <p>Users: {{ stats.users }} | Ads: {{ stats.ads }}</p>
-    <hr>
-    <h3>Withdraw Requests</h3>
-    <table border="1">
-        <tr><th>User ID</th><th>Coins</th><th>TON Value</th><th>Wallet</th><th>Action</th></tr>
-        {% for r in reqs %}
-        <tr>
-            <td>{{ r.user_id }}</td>
-            <td>{{ r.amount_coins }}</td>
-            <td style="color:blue; font-weight:bold;">{{ r.ton_value }} TON</td>
-            <td>{{ r.wallet }}</td>
-            <td>Manual Pay Needed</td>
-        </tr>
-        {% endfor %}
-    </table>
+
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1"><i class="fas fa-user-shield ms-2"></i> لوحة التحكم</span>
+            <span class="text-white" style="font-size: 14px;">مدير النظام</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card card-stat bg-gradient-primary p-3">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <h5>المستخدمين</h5>
+                    <h2 class="fw-bold">{{ stats.users }}</h2>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card card-stat bg-gradient-success p-3">
+                    <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                    <h5>إعلانات شوهدت</h5>
+                    <h2 class="fw-bold">{{ stats.ads }}</h2>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card card-stat bg-gradient-warning p-3">
+                    <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                    <h5>طلبات الانتظار</h5>
+                    <h2 class="fw-bold">{{ reqs|length }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-table p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-dark"><i class="fas fa-money-bill-wave ms-2 text-success"></i> طلبات السحب المعلقة</h4>
+                <input type="text" id="searchInput" class="form-control w-25" placeholder="بحث..." onkeyup="searchTable()">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="withdrawTable">
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>المبلغ (نقاط)</th>
+                            <th>القيمة (USD/TON)</th>
+                            <th>المحفظة (نسخ سريع)</th>
+                            <th>التاريخ</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reqs %}
+                        <tr id="row-{{ r.id }}">
+                            <td>
+                                <div class="user-info">
+                                    <div class="avatar-circle">{{ r.username[0]|upper if r.username else 'U' }}</div>
+                                    <div>
+                                        <div class="fw-bold">@{{ r.username if r.username else 'Unknown' }}</div>
+                                        <div class="text-muted" style="font-size:12px;">ID: {{ r.user_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="fw-bold text-primary">{{ r.amount_coins }}</td>
+                            <td>
+                                <span class="price-tag text-success">💵 {{ "%.2f"|format(r.usd_value) }} $</span>
+                                <span class="price-tag text-info">💎 {{ "%.4f"|format(r.ton_value) }} TON</span>
+                            </td>
+                            <td>
+                                <div class="wallet-box">
+                                    <span class="text-truncate" style="max-width: 150px;" id="wallet-{{ r.id }}">{{ r.wallet }}</span>
+                                    <button class="btn-copy" onclick="copyToClipboard('{{ r.wallet }}', this)">
+                                        <i class="far fa-copy"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="text-muted" style="font-size: 13px;">{{ r.date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success" onclick="markAsPaid(this)">
+                                    <i class="fas fa-check"></i> تم الدفع
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">لا توجد طلبات سحب معلقة حالياً 🎉</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. دالة النسخ الاحترافية
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                // تغيير شكل الزر ليخبرك أنه تم النسخ
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+                btn.style.backgroundColor = "#d1e7dd";
+                
+                // إعادة الزر لشكله الطبيعي بعد ثانيتين
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                    btn.style.backgroundColor = "#e2e6ea";
+                }, 2000);
+            });
+        }
+
+        // 2. دالة "تم الدفع" (إخفاء الصف)
+        function markAsPaid(btn) {
+            if(confirm("هل أنت متأكد أنك قمت بتحويل الأموال لهذا المستخدم؟")) {
+                // نخفي الصف من الجدول لكي لا يزعجك
+                const row = btn.closest('tr');
+                row.style.backgroundColor = "#d1e7dd";
+                row.style.transition = "0.5s";
+                setTimeout(() => {
+                    row.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        // 3. دالة البحث في الجدول
+        function searchTable() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("withdrawTable");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 0; i < tr.length; i++) {
+                // البحث في عمود اسم المستخدم (العمود الأول)
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+    </script>
+
 </body>
 </html>
